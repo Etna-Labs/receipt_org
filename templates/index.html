@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Uber Receipt Processor</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Uber Receipt Processor</h1>
+        <div class="upload-form">
+            <div class="drop-zone" id="dropZone">
+                <p>拖拽文件到这里或点击选择文件</p>
+                <input type="file" id="fileInput" multiple accept="image/*,.pdf" style="display: none;">
+            </div>
+            <div class="preview-area" id="previewArea"></div>
+            <button class="submit-btn" id="submitBtn" disabled>处理文件</button>
+        </div>
+    </div>
+    <script src="{{ url_for('static', path='/js/upload.js') }}"></script>
+</body>
+</html>

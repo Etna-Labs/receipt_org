@@ -1,0 +1,25 @@
+# Ignore all image files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.ico
+*.svg
+
+# Ignore all PDF files
+*.pdf
+
+# python cache
+*.py[cod]     # This covers .pyc, .pyo and .pyd files
+__pycache__/
+
+# Virtual Environment
+venv/
+env/
+.env/
+.venv/
+
+# If you have specific folders for images/PDFs, you can ignore entire folders:
+receipts/
+report/
