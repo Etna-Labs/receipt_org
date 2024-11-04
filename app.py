@@ -7,7 +7,8 @@ import logging
 import shutil
 import os
 from typing import List
-from uber_ocr import UberReceiptProcessor
+# from uber_ocr import UberReceiptProcessor # using ocr
+from uber_ocr_oai import UberReceiptProcessor # using llm
 from tempfile import NamedTemporaryFile
 
 app = FastAPI()
