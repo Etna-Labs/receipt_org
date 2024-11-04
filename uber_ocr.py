@@ -9,18 +9,18 @@ import pytesseract
 import re
 
 class UberReceiptProcessor:
-    def __init__(self, output_path="expense_report.pdf", images_per_page=4):
+    def __init__(self, output_path, images_per_page=4):
         self.output_path = output_path
         self.images_per_page = images_per_page
         self.receipts = []
         self.total_amount = 0
         
-        # A4纸张尺寸（单位：点）
-        self.page_width, self.page_height = A4
+        # 使用横向A4纸张
+        self.page_width, self.page_height = A4[::-1]  # 交换宽高以获得横向布局
         
-        # 设置图片在PDF中的大小（宽度为A4纸张宽度的一半）
-        self.image_width = self.page_width / 2 - 40
-        self.image_height = self.page_height / 3 - 40
+        # 调整图片尺寸以适应1x4布局
+        self.image_width = (self.page_width - 150) / 4  # 左右总边距120，图片间距30
+        self.image_height = self.page_height - 120  # 上下留边距
 
     def extract_info_from_image(self, image_path):
         """从图片中提取日期、金额和类型信息"""
@@ -69,49 +69,12 @@ class UberReceiptProcessor:
     def create_pdf(self):
         """生成PDF报告"""
         print(f"Creating PDF to:{self.output_path}")
-        c = canvas.Canvas(self.output_path, pagesize=A4)
+        c = canvas.Canvas(self.output_path, pagesize=A4[::-1])  # 使用横向A4
         
-        # 添加标题
+        # 第一页：总结页
         c.setFont("Helvetica-Bold", 16)
-        c.drawString(30, self.page_height - 30, "Uber expense report")
-
-        current_y = self.page_height - 60
-        images_per_page = self.images_per_page
-        current_image = 0
-
-        for receipt in self.receipts:
-            if current_image > 0 and current_image % images_per_page == 0:
-                c.showPage()
-                current_y = self.page_height - 60
-            
-            # 添加图片
-            img = Image.open(receipt['path'])
-            aspect = img.width / img.height
-            img_height = self.image_height
-            img_width = img_height * aspect
-            if img_width > self.image_width:
-                img_width = self.image_width
-                img_height = img_width / aspect
-            
-            c.drawImage(receipt['path'], 
-                       30 + (current_image % 2) * (self.page_width/2), 
-                       current_y - img_height,
-                       width=img_width, 
-                       height=img_height)
-            
-            # 添加收据信息
-            c.setFont("Helvetica", 10)
-            info_y = current_y - img_height - 15
-            c.drawString(30 + (current_image % 2) * (self.page_width/2),
-                        info_y,
-                        f"Time: {receipt['date']} | Amount: ${receipt['amount']:.2f} | Type: {receipt['type']}")
-            
-            current_image += 1
-            if current_image % 2 == 0:
-                current_y -= (img_height + 40)
-
-        # 添加总结页
-        c.showPage()
+        c.drawString(30, self.page_height - 30, "Uber expense report - Summary")
+        
         c.setFont("Helvetica-Bold", 14)
         c.drawString(30, self.page_height - 60, "Amount summary:")
         
@@ -129,7 +92,62 @@ class UberReceiptProcessor:
             c.drawString(30, y, f"{receipt_type} Total: ${amount:.2f}")
             y -= 20
         
-        c.drawString(30, y - 20, f"Total: ${self.total_amount:.2f}")        
+        c.drawString(30, y - 20, f"Total: ${self.total_amount:.2f}")
+        
+        # 结束第一页
+        c.showPage()
+
+        # 后续页面：收据图片
+        current_page = 1
+        images_per_row = 4
+        rows_per_page = 1
+
+        for i, receipt in enumerate(self.receipts):
+            if i % self.images_per_page == 0:
+                if i > 0:
+                    c.showPage()
+                current_page += 1
+                c.setFont("Helvetica-Bold", 16)
+                c.drawString(30, self.page_height - 30, f"Uber expense report - Page {current_page}")
+
+            # 计算当前图片在页面上的位置
+            col = i % images_per_row
+
+            # 计算x和y坐标（每列之间间距30）
+            x = 30 + col * (self.image_width + 30)
+            y = self.page_height - 60  # 固定y坐标，因为只有一行
+
+            # 添加图片
+            img = Image.open(receipt['path'])
+            aspect = img.width / img.height
+            img_height = self.image_height
+            img_width = img_height * aspect
+            if img_width > self.image_width:
+                img_width = self.image_width
+                img_height = img_width / aspect
+
+            # 居中显示图片
+            x_centered = x + (self.image_width - img_width) / 2
+            
+            c.drawImage(receipt['path'], 
+                       x_centered, 
+                       y - img_height,
+                       width=img_width, 
+                       height=img_height)
+            
+            # 添加收据信息
+            c.setFont("Helvetica", 12)
+            info_y = y - img_height - 15
+
+            c.drawString(x, info_y,
+                        f"Type: {receipt['type']}")
+
+            c.drawString(x, info_y - 15,
+                        f"Time: {receipt['date']}")
+            
+            c.drawString(x, info_y - 30,
+                        f"Amount: ${receipt['amount']:.2f}")
+
         c.save()
 
 def process_receipts(receipt_folder, output_path):
