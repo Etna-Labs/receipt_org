@@ -11,6 +11,7 @@ from openai import OpenAI
 import base64
 
 oai_api_key = os.getenv("OPENAI_API_KEY")
+print(oai_api_key)
 client = OpenAI(api_key=oai_api_key)
 
 class UberReceiptProcessor:
@@ -41,7 +42,7 @@ class UberReceiptProcessor:
         # 准备 Vision API 的提示信息
         prompt = """Please analyze this Uber receipt image and extract the following information:
         1. Type (Meal for Uber Eats or Trip for Uber ride)
-        2. Date (in format MMM DD, YYYY)
+        2. Date (in format MMM DD, YYYY); The year should be 2024 unless otherwise specified
         3. Amount (in USD)
         
         Please respond in JSON format like:
@@ -49,7 +50,8 @@ class UberReceiptProcessor:
             "type": "Meal/Trip",
             "date": "MMM DD, YYYY",
             "amount": "$XX.XX"
-        }"""
+        }
+        """
 
         response = self.client.chat.completions.create(
             model="gpt-4o-mini",
