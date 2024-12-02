@@ -7,8 +7,8 @@ import logging
 import shutil
 import os
 from typing import List
-# from uber_ocr import UberReceiptProcessor # using ocr
-from uber_ocr_oai import UberReceiptProcessor # using llm
+# from uber_ocr_en import UberReceiptProcessor # using ocr
+from uber_llm_ocr import UberReceiptProcessor # using llm
 from tempfile import NamedTemporaryFile
 
 app = FastAPI()
@@ -29,7 +29,7 @@ async def home(request: Request):
 
 @app.post("/upload")
 async def process_receipts(
-    files: List[UploadFile], 
+    files: List[UploadFile],
     background_tasks: BackgroundTasks,
     images_per_page: int = Form(4)
     ):
@@ -37,11 +37,11 @@ async def process_receipts(
     # Validate input files
     if not files:
         raise HTTPException(status_code=400, detail="No files were uploaded")
-    
+
     # Using temp files to handle uploaded images and pdf
     with NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
         temp_path = tmp_file.name
-        
+
         # Save uploaded files to temporary location
         temp_files = []
         for file in files:
@@ -82,7 +82,7 @@ async def process_receipts(
         except Exception as e:
             logging.error(f"Error sending PDF file: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-        
+
     # 处理收据
     # output_path = str(OUTPUT_DIR / "expense_report.pdf")
 
@@ -96,7 +96,7 @@ async def process_receipts(
     #         file_path = UPLOAD_DIR / file.filename
     #         processor.add_receipt(str(file_path))
     # processor.create_pdf()
-    
+
     # filename = os.path.basename(output_path)
     # return FileResponse(
     #     output_path,
