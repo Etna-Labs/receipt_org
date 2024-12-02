@@ -38,7 +38,7 @@ def main():
         st.subheader(f"Preview ({len(uploaded_files)} files)")
 
         # Create a grid layout for previews
-        cols = st.columns(3)
+        cols = st.columns(4)
         for idx, file in enumerate(uploaded_files):
             with cols[idx % 3]:
                 st.image(file, caption=file.name, use_column_width=True)
