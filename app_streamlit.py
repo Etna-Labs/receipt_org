@@ -3,6 +3,8 @@ from pathlib import Path
 import tempfile
 from uber_ocr_en import UberReceiptProcessor
 import os
+import base64
+
 
 st.set_page_config(
     page_title="Uber Receipt Processor",
@@ -38,9 +40,9 @@ def main():
         st.subheader(f"Preview ({len(uploaded_files)} files)")
 
         # Create a grid layout for previews
-        cols = st.columns(4)
+        cols = st.columns(5)
         for idx, file in enumerate(uploaded_files):
-            with cols[idx % 3]:
+            with cols[idx % 4]:
                 st.image(file, caption=file.name, use_column_width=True)
 
         # Process button
@@ -68,7 +70,7 @@ def main():
                             status_text.text(f"Saving file {idx + 1} of {len(uploaded_files)}...")
 
                         # Process receipts
-                        output_pdf = temp_dir / "output.pdf"
+                        output_pdf = Path(__file__).parent / "report"/"streamlit_output.pdf"
                         processor = UberReceiptProcessor(
                             str(output_pdf),
                             images_per_page=images_per_page
@@ -77,8 +79,10 @@ def main():
                         # Process each receipt
                         receipt_info = []
                         for idx, file in enumerate(saved_files):
-                            info = processor.extract_info_from_image(str(file))
-                            receipt_info.append((file.name, info))
+                            processor.add_receipt(str(file))
+                            receipt_info.append(processor.receipts[-1])
+                            # info = processor.extract_info_from_image(str(file))
+                            # receipt_info.append((file.name, info))
 
                             # Update progress
                             progress = 0.5 + (idx + 1) / (len(uploaded_files) * 2)  # Second half for processing
@@ -88,7 +92,7 @@ def main():
                         # Generate PDF
                         processor.create_pdf()
                         progress_bar.progress(1.0)
-                        status_text.text("Processing complete!")
+                        status_text.text("Processing complete...")
 
                         # Show results
                         st.success("✅ All receipts processed successfully!")
@@ -96,15 +100,20 @@ def main():
                         # Display receipt information in a table
                         if receipt_info:
                             st.subheader("Receipt Details")
-                            for name, info in receipt_info:
-                                st.write(f"**{name}**: {info}")
+                            for receipt in receipt_info:
+                                # print(receipt)
+                                st.write(f"**{receipt}**")
+                                # st.write(f"**Total$:** ${receipt.amount:.2f}")
+                                # st.write(f"**Type:** {receipt.type}")
+                                # st.write(f"**Date:** {receipt.date}")
+                                st.write("---")  # Adds a horizontal line between receipts
 
                         # Offer PDF download
                         with open(output_pdf, "rb") as pdf_file:
                             st.download_button(
                                 "📥 Download Report",
                                 pdf_file,
-                                "uber_receipts_report.pdf",
+                                "streamlit_uber_receipts_report.pdf",
                                 "application/pdf",
                                 use_container_width=True
                             )

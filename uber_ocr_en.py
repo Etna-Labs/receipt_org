@@ -110,7 +110,7 @@ class UberReceiptProcessor:
 
         # 后续页面：收据图片
         current_page = 1
-        images_per_row = 4
+        images_per_row = self.images_per_page
         rows_per_page = 1
 
         for i, receipt in enumerate(self.receipts):
@@ -159,30 +159,26 @@ class UberReceiptProcessor:
             c.drawString(x, info_y - 30,
                         f"Amount: ${receipt['amount']:.2f}")
 
+        print("PDF report generated....")
         c.save()
-
-def process_receipts(receipt_folder, output_path):
-    """处理指定文件夹中的所有收据图片"""
-    processor = UberReceiptProcessor(output_path)
-
-    # 处理文件夹中的所有图片
-    for filename in os.listdir(receipt_folder):
-        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-            image_path = os.path.join(receipt_folder, filename)
-            processor.add_receipt(image_path)
-
-    print("===" * 20)
-    print("Creating PDF and summarize")
-
-    processor.create_pdf()
-    total = processor.total_amount
-    print(f"total amount$:, ${total:.2f}")
-    return total
 
 # 使用示例
 if __name__ == "__main__":
     # 指定包含收据图片的文件夹路径
     receipt_folder = "receipts"
     output_path = "report/expense_demo.pdf"
-    total = process_receipts(receipt_folder, output_path)
-    print(f"报告已生成，总金额: ${total:.2f}")
+
+    processor = UberReceiptProcessor(output_path)
+    for filename in os.listdir(receipt_folder):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            image_path = os.path.join(receipt_folder, filename)
+            processor.add_receipt(image_path)
+
+    print("=====" * 20)
+    print(f"Creating PDF and summarize")
+    processor.create_pdf()
+    total = processor.total_amount
+    print("===== report generated =====")
+    print(f"total amount$: ${total:.2f}")
+    # total = process_receipts(receipt_folder, output_path)
+    # print(f"报告已生成，总金额: ${total:.2f}")
