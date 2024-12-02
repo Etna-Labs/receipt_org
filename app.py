@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, Request, BackgroundTasks
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, BackgroundTasks
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -7,7 +7,8 @@ import logging
 import shutil
 import os
 from typing import List
-from uber_ocr import UberReceiptProcessor
+# from uber_ocr_en import UberReceiptProcessor # using ocr
+from uber_llm_ocr import UberReceiptProcessor # using llm
 from tempfile import NamedTemporaryFile
 
 app = FastAPI()

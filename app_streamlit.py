@@ -1,7 +1,7 @@
 import streamlit as st
 from pathlib import Path
 import tempfile
-from uber_ocr import UberReceiptProcessor
+from uber_ocr_en import UberReceiptProcessor
 import os
 
 st.set_page_config(
