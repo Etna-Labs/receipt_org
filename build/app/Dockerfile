@@ -3,16 +3,16 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy application files
-COPY ./app/app.py ./app/
+COPY ../../app.py .
 COPY ../../static ./static
 COPY ../../templates ./templates
 COPY ../../requirements.txt .
-COPY ../../uber_llm_ocr.py ./app/
-COPY ../../uber_ocr_en.py ./app/
-COPY start.sh .
+COPY ../../uber_llm_ocr.py .
+COPY ../../uber_ocr_en.py .
 
-# Ensure correct Python path
+# Set environment variables
 ENV PYTHONPATH=/app
+ENV PORT=8000
 
 # Install system dependencies for reportlab and other packages
 RUN apt-get update && apt-get install -y \
@@ -27,7 +27,5 @@ RUN chmod +x /app/start.sh
 
 EXPOSE 8000
 
-# Use custom entrypoint script
-COPY entrypoint.sh .
-RUN chmod +x /app/entrypoint.sh
-CMD ["/app/entrypoint.sh"]
+# Start the application
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
