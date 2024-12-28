@@ -27,5 +27,7 @@ RUN chmod +x /app/start.sh
 
 EXPOSE 8000
 
-# Use uvicorn directly
-CMD ["uvicorn", "app.app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use custom entrypoint script
+COPY entrypoint.sh .
+RUN chmod +x /app/entrypoint.sh
+CMD ["/app/entrypoint.sh"]
