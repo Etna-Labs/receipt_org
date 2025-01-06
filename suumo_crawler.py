@@ -91,13 +91,15 @@ class SuumoCrawler:
                             property_data['size'] = value_text
                     elif '築年数' in header_text:
                         property_data['building_age'] = value_text
-                    elif '階' in header_text and '階建' not in header_text:
-                        property_data['floor'] = value_text
                     elif '階建' in header_text:
                         property_data['total_floors'] = value_text
-                    # Additional field extraction
-                    elif '間取り詳細' in header_text:
-                        property_data['layout_detail'] = value_text
+                        # Extract floor number from total_floors (e.g., "1階/2階建" -> "1階")
+                        if '/' in value_text:
+                            floor = value_text.split('/')[0]
+                            property_data['floor'] = floor
+                    elif '間取り' in header_text:
+                        if not property_data.get('layout_detail'):  # Only set if not already set
+                            property_data['layout_detail'] = value_text
                     elif '構造' in header_text:
                         property_data['structure'] = value_text
                     elif '築年月' in header_text:
@@ -115,7 +117,10 @@ class SuumoCrawler:
                     elif '仲介手数料' in header_text:
                         property_data['brokerage_fee'] = value_text
                     elif 'SUUMO物件コード' in header_text or '物件コード' in header_text:
-                        property_data['property_code'] = value_text
+                        # Clean the property code value (remove any whitespace or special characters)
+                        cleaned_code = ''.join(filter(str.isalnum, value_text))
+                        if cleaned_code:
+                            property_data['property_code'] = cleaned_code
                     elif '総戸数' in header_text:
                         property_data['total_units'] = value_text
                     elif '情報更新日' in header_text:
