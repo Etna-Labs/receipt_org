@@ -91,15 +91,15 @@ class SuumoCrawler:
                             property_data['size'] = value_text
                     elif '築年数' in header_text:
                         property_data['building_age'] = value_text
-                    elif '階' in header_text:
+                    elif header_text == '階':
                         property_data['floor'] = value_text
-                    # Additional field extraction
-                    elif '間取り詳細' in header_text:
-                        property_data['layout_detail'] = value_text
-                    elif '構造' in header_text:
-                        property_data['structure'] = value_text
-                    elif '階建' in header_text:
+                    elif header_text == '階建':
                         property_data['total_floors'] = value_text
+                    # Additional field extraction
+                    elif header_text == '間取り詳細':
+                        property_data['layout_detail'] = value_text
+                    elif header_text == '構造':
+                        property_data['structure'] = value_text
                     elif '築年月' in header_text:
                         property_data['construction_date'] = value_text
                     elif '駐車場' in header_text:
@@ -114,7 +114,7 @@ class SuumoCrawler:
                         property_data['guarantee_company'] = value_text
                     elif '仲介手数料' in header_text:
                         property_data['brokerage_fee'] = value_text
-                    elif 'SUUMO物件コード' in header_text:
+                    elif header_text == 'SUUMO物件コード':
                         property_data['property_code'] = value_text
                     elif '総戸数' in header_text:
                         property_data['total_units'] = value_text
