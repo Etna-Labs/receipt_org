@@ -77,21 +77,21 @@ class SuumoCrawler:
                     elif '階' in header_text:
                         property_data['floor'] = value_text
 
-        # Extract rent (look for both possible classes)
-        rent_element = soup.find('div', class_='property_view_main-emphasis') or \
-                      soup.find('div', class_='property_view_note-emphasis')
-        if rent_element:
-            rent_text = self.clean_text(rent_element.text)
-            # Extract only the numerical part and currency
-            if rent_text:
-                if '万円' in rent_text:
-                    property_data['rent'] = rent_text.split('万円')[0].strip() + '万円'
-                elif '円' in rent_text:
-                    property_data['rent'] = rent_text.split('円')[0].strip() + '円'
+        # Extract rent - try different possible locations
+        rent_text = None
+        # Try to find rent in the main content
+        rent_pattern = re.compile(r'(\d+\.?\d*)万円')
+        for text in soup.stripped_strings:
+            match = rent_pattern.search(text)
+            if match:
+                rent_text = match.group(0)
+                break
+                
+        if rent_text:
+            property_data['rent'] = rent_text
         
         # Extract size from title if not found in table
         if not property_data['size'] and property_data['title']:
-            import re
             size_match = re.search(r'(\d+(?:\.\d+)?m²)', property_data['title'])
             if size_match:
                 property_data['size'] = size_match.group(1)
@@ -111,11 +111,10 @@ class SuumoCrawler:
         if features_section and isinstance(features_section, BeautifulSoupTag):
             features_list = features_section.find_next('ul')
             if features_list and isinstance(features_list, BeautifulSoupTag):
-                for feature in features_list.find_all('li'):
-                    if isinstance(feature, BeautifulSoupTag):
-                        feature_text = self.clean_text(feature.text)
-                        if feature_text:
-                            features.append(feature_text)
+                # The features are comma-separated within a single li element
+                feature_items = features_list.find('li')
+                if feature_items and isinstance(feature_items, BeautifulSoupTag):
+                    features = [f.strip() for f in feature_items.text.split('、') if f.strip()]
         property_data['features'] = features
 
         return property_data
