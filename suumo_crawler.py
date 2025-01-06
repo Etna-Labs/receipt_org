@@ -97,13 +97,18 @@ class SuumoCrawler:
                 property_data['size'] = size_match.group(1)
                 
         # Try to extract building age from different locations
-        building_info = soup.find('td', class_='property_view_table-body')
-        if building_info:
-            building_text = self.clean_text(building_info.text)
-            if '築' in building_text:
-                age_match = re.search(r'築(\d+)年', building_text)
+        building_age = None
+        # Try to find building age in any text content
+        age_pattern = re.compile(r'築(\d+)年')
+        for text in soup.stripped_strings:
+            if '築' in text:
+                age_match = age_pattern.search(text)
                 if age_match:
-                    property_data['building_age'] = f"築{age_match.group(1)}年"
+                    building_age = f"築{age_match.group(1)}年"
+                    break
+        
+        if building_age:
+            property_data['building_age'] = building_age
 
         # Extract features
         features = []
@@ -114,7 +119,10 @@ class SuumoCrawler:
                 # The features are comma-separated within a single li element
                 feature_items = features_list.find('li')
                 if feature_items and isinstance(feature_items, BeautifulSoupTag):
+                    # Split by Japanese comma and filter out empty strings
                     features = [f.strip() for f in feature_items.text.split('、') if f.strip()]
+                    # Remove any duplicate features
+                    features = list(dict.fromkeys(features))
         property_data['features'] = features
 
         return property_data
