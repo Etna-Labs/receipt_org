@@ -42,7 +42,24 @@ class SuumoCrawler:
             'size': None,
             'building_age': None,
             'floor': None,
-            'features': []
+            'features': [],
+            # Additional fields from 物件概要 and 物件詳細情報
+            'layout_detail': None,      # 間取り詳細
+            'structure': None,          # 構造
+            'total_floors': None,       # 階建
+            'construction_date': None,   # 築年月
+            'parking': None,            # 駐車場
+            'transaction_type': None,    # 取引態様
+            'conditions': None,          # 条件
+            'contract_period': None,     # 契約期間
+            'guarantee_company': None,   # 保証会社
+            'brokerage_fee': None,      # 仲介手数料
+            'property_code': None,      # SUUMO物件コード
+            'total_units': None,        # 総戸数
+            'last_update': None,        # 情報更新日
+            'insurance': None,          # 損保
+            'entry_conditions': None,    # 入居
+            'notes': None               # 備考
         }
         
         # Extract and clean title
@@ -76,6 +93,39 @@ class SuumoCrawler:
                         property_data['building_age'] = value_text
                     elif '階' in header_text:
                         property_data['floor'] = value_text
+                    # Additional field extraction
+                    elif '間取り詳細' in header_text:
+                        property_data['layout_detail'] = value_text
+                    elif '構造' in header_text:
+                        property_data['structure'] = value_text
+                    elif '階建' in header_text:
+                        property_data['total_floors'] = value_text
+                    elif '築年月' in header_text:
+                        property_data['construction_date'] = value_text
+                    elif '駐車場' in header_text:
+                        property_data['parking'] = value_text
+                    elif '取引態様' in header_text:
+                        property_data['transaction_type'] = value_text
+                    elif '条件' in header_text:
+                        property_data['conditions'] = value_text
+                    elif '契約期間' in header_text:
+                        property_data['contract_period'] = value_text
+                    elif '保証会社' in header_text:
+                        property_data['guarantee_company'] = value_text
+                    elif '仲介手数料' in header_text:
+                        property_data['brokerage_fee'] = value_text
+                    elif 'SUUMO物件コード' in header_text:
+                        property_data['property_code'] = value_text
+                    elif '総戸数' in header_text:
+                        property_data['total_units'] = value_text
+                    elif '情報更新日' in header_text:
+                        property_data['last_update'] = value_text
+                    elif '損保' in header_text:
+                        property_data['insurance'] = value_text
+                    elif '入居' in header_text:
+                        property_data['entry_conditions'] = value_text
+                    elif '備考' in header_text:
+                        property_data['notes'] = value_text
 
         # Extract rent - try different possible locations
         rent_text = None
@@ -196,8 +246,28 @@ class SuumoCrawler:
         return all_properties
 
     def save_to_csv(self, properties, filename):
-        """Save crawled data to CSV"""
+        """Save crawled data to CSV with organized columns"""
         df = pd.DataFrame(properties)
+        
+        # Define column order to ensure consistent CSV structure
+        columns = [
+            'url', 'timestamp', 'title', 'rent', 'location',
+            'layout', 'layout_detail', 'size', 'building_age',
+            'construction_date', 'floor', 'total_floors',
+            'structure', 'parking', 'transaction_type',
+            'conditions', 'contract_period', 'guarantee_company',
+            'brokerage_fee', 'property_code', 'total_units',
+            'last_update', 'insurance', 'entry_conditions',
+            'notes', 'features'
+        ]
+        
+        # Ensure all columns exist, fill missing ones with empty strings
+        for col in columns:
+            if col not in df.columns:
+                df[col] = ''
+        
+        # Reorder columns and save to CSV
+        df = df[columns]
         df.to_csv(filename, index=False, encoding='utf-8-sig')
         print(f"Saved {len(properties)} properties to {filename}")
 
