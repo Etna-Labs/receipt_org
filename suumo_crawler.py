@@ -100,12 +100,13 @@ class SuumoCrawler:
         building_age = None
         # First try the dedicated fields
         for age_field in ['築年数', '築年月']:
-            building_info = soup.find('th', string=age_field)
+            building_info = soup.find('th', string=re.compile(age_field))
             if building_info:
-                td_element = building_info.find_next_sibling('td')
+                td_element = building_info.find_next('td')
                 if td_element and hasattr(td_element, 'text'):
                     building_age = td_element.text.strip()
-                    break
+                    if building_age:
+                        break
         
         # If not found, try the title
         if not building_age:
@@ -115,6 +116,18 @@ class SuumoCrawler:
                 age_match = age_pattern.search(title.text)
                 if age_match:
                     building_age = f"築{age_match.group(1)}年"
+                    
+        # If still not found, try searching all text
+        if not building_age:
+            for element in soup.find_all(['td', 'div', 'p']):
+                if hasattr(element, 'text'):
+                    text = element.text.strip()
+                    if '築' in text:
+                        age_pattern = re.compile(r'築(\d+)年')
+                        age_match = age_pattern.search(text)
+                        if age_match:
+                            building_age = f"築{age_match.group(1)}年"
+                            break
         
         if building_age:
             property_data['building_age'] = building_age
