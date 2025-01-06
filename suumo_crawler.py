@@ -97,9 +97,8 @@ class SuumoCrawler:
                         if '/' in value_text:
                             floor = value_text.split('/')[0]
                             property_data['floor'] = floor
-                    elif '間取り' in header_text:
-                        if not property_data.get('layout_detail'):  # Only set if not already set
-                            property_data['layout_detail'] = value_text
+                    elif '間取り詳細' in header_text or ('間取り' in header_text and 'ロフト' in value_text):
+                        property_data['layout_detail'] = value_text
                     elif '構造' in header_text:
                         property_data['structure'] = value_text
                     elif '築年月' in header_text:
@@ -116,11 +115,15 @@ class SuumoCrawler:
                         property_data['guarantee_company'] = value_text
                     elif '仲介手数料' in header_text:
                         property_data['brokerage_fee'] = value_text
-                    elif 'SUUMO物件コード' in header_text or '物件コード' in header_text:
-                        # Clean the property code value (remove any whitespace or special characters)
-                        cleaned_code = ''.join(filter(str.isalnum, value_text))
-                        if cleaned_code:
-                            property_data['property_code'] = cleaned_code
+                    elif 'SUUMO物件コード' in header_text or '物件コード' in header_text or 'jnc_' in value_text:
+                        # Extract property code from value or URL if present
+                        if 'jnc_' in value_text:
+                            code = value_text.split('jnc_')[1].split('/')[0].strip()
+                            property_data['property_code'] = f"jnc_{code}"
+                        else:
+                            cleaned_code = ''.join(filter(str.isalnum, value_text))
+                            if cleaned_code:
+                                property_data['property_code'] = cleaned_code
                     elif '総戸数' in header_text:
                         property_data['total_units'] = value_text
                     elif '情報更新日' in header_text:
