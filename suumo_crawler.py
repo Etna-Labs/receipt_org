@@ -98,14 +98,23 @@ class SuumoCrawler:
                 
         # Try to extract building age from different locations
         building_age = None
-        # Try to find building age in any text content
-        age_pattern = re.compile(r'築(\d+)年')
-        for text in soup.stripped_strings:
-            if '築' in text:
-                age_match = age_pattern.search(text)
+        # First try the dedicated fields
+        for age_field in ['築年数', '築年月']:
+            building_info = soup.find('th', string=age_field)
+            if building_info:
+                td_element = building_info.find_next_sibling('td')
+                if td_element and hasattr(td_element, 'text'):
+                    building_age = td_element.text.strip()
+                    break
+        
+        # If not found, try the title
+        if not building_age:
+            title = soup.find('h1')
+            if title and hasattr(title, 'text'):
+                age_pattern = re.compile(r'築(\d+)年')
+                age_match = age_pattern.search(title.text)
                 if age_match:
                     building_age = f"築{age_match.group(1)}年"
-                    break
         
         if building_age:
             property_data['building_age'] = building_age
@@ -116,13 +125,25 @@ class SuumoCrawler:
         if features_section and isinstance(features_section, BeautifulSoupTag):
             features_list = features_section.find_next('ul')
             if features_list and isinstance(features_list, BeautifulSoupTag):
-                # The features are comma-separated within a single li element
-                feature_items = features_list.find('li')
-                if feature_items and isinstance(feature_items, BeautifulSoupTag):
-                    # Split by Japanese comma and filter out empty strings
-                    features = [f.strip() for f in feature_items.text.split('、') if f.strip()]
-                    # Remove any duplicate features
-                    features = list(dict.fromkeys(features))
+                # Get all li elements and their text content
+                for feature_item in features_list.find_all('li'):
+                    if isinstance(feature_item, BeautifulSoupTag):
+                        # Split by Japanese comma and filter out empty strings
+                        item_features = [f.strip() for f in feature_item.text.split('、') if f.strip()]
+                        features.extend(item_features)
+                
+                # Remove any duplicate features while preserving order
+                features = list(dict.fromkeys(features))
+        
+        # If no features found, try alternative locations
+        if not features:
+            features_table = soup.find('th', string='設備')
+            if features_table:
+                td_element = features_table.find_next_sibling('td')
+                if td_element and hasattr(td_element, 'text'):
+                    features_text = td_element.text.strip()
+                    features = [f.strip() for f in features_text.split('、') if f.strip()]
+        
         property_data['features'] = features
 
         return property_data
@@ -170,9 +191,9 @@ class SuumoCrawler:
 def main():
     crawler = SuumoCrawler()
     
-    # Example: Crawl properties in Shinjuku
+    # Test crawl with a small sample
     area_url = "https://suumo.jp/chintai/tokyo/sc_shinjuku/"
-    properties = crawler.crawl_area(area_url, max_pages=3)
+    properties = crawler.crawl_area(area_url, max_pages=1)
     
     # Save results
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
