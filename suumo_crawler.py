@@ -121,21 +121,18 @@ class SuumoCrawler:
 
         # Extract features
         features = []
+        # First try the dedicated section
         features_section = soup.find('h2', string='部屋の特徴・設備')
-        if features_section and isinstance(features_section, BeautifulSoupTag):
-            features_list = features_section.find_next('ul')
-            if features_list and isinstance(features_list, BeautifulSoupTag):
-                # Get all li elements and their text content
-                for feature_item in features_list.find_all('li'):
-                    if isinstance(feature_item, BeautifulSoupTag):
+        if features_section:
+            next_ul = features_section.find_next_sibling('ul')
+            if next_ul and isinstance(next_ul, BeautifulSoupTag):
+                for li in next_ul.find_all('li', recursive=False):
+                    if li and hasattr(li, 'text'):
                         # Split by Japanese comma and filter out empty strings
-                        item_features = [f.strip() for f in feature_item.text.split('、') if f.strip()]
+                        item_features = [f.strip() for f in li.text.split('、') if f.strip()]
                         features.extend(item_features)
-                
-                # Remove any duplicate features while preserving order
-                features = list(dict.fromkeys(features))
         
-        # If no features found, try alternative locations
+        # If no features found, try the table
         if not features:
             features_table = soup.find('th', string='設備')
             if features_table:
@@ -143,6 +140,9 @@ class SuumoCrawler:
                 if td_element and hasattr(td_element, 'text'):
                     features_text = td_element.text.strip()
                     features = [f.strip() for f in features_text.split('、') if f.strip()]
+        
+        # Remove duplicates while preserving order
+        features = list(dict.fromkeys(features))
         
         property_data['features'] = features
 
