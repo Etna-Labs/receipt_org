@@ -32,6 +32,13 @@ class SuumoCrawler:
     def parse_property_details(self, url):
         """Parse individual property page"""
         soup = self.get_soup(url)
+        # Extract property code from URL
+        property_code = None
+        if 'jnc_' in url:
+            code_match = re.search(r'jnc_(\d+)', url)
+            if code_match:
+                property_code = f"jnc_{code_match.group(1)}"
+
         property_data = {
             'url': url,
             'timestamp': datetime.now().isoformat(),
@@ -54,7 +61,7 @@ class SuumoCrawler:
             'contract_period': None,     # 契約期間
             'guarantee_company': None,   # 保証会社
             'brokerage_fee': None,      # 仲介手数料
-            'property_code': None,      # SUUMO物件コード
+            'property_code': property_code,  # SUUMO物件コード
             'total_units': None,        # 総戸数
             'last_update': None,        # 情報更新日
             'insurance': None,          # 損保
@@ -84,7 +91,13 @@ class SuumoCrawler:
                             location = value_text.replace('地図を見る', '').strip()
                             property_data['location'] = location
                     elif '間取り' in header_text:
-                        property_data['layout'] = value_text
+                        # Check if value contains detailed layout information
+                        layout_parts = value_text.split()
+                        if len(layout_parts) > 1 or 'ロフト' in value_text:
+                            property_data['layout'] = layout_parts[0]  # Basic layout (e.g., '洋4.8')
+                            property_data['layout_detail'] = value_text  # Full layout info
+                        else:
+                            property_data['layout'] = value_text
                     elif '専有面積' in header_text:
                         # Extract only the number and unit
                         if value_text and 'm²' in value_text:
