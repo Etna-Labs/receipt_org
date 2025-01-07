@@ -1,3 +1,14 @@
+"""
+FastAPI web application for processing Uber receipts.
+
+This application provides a web interface for uploading Uber receipt images,
+processes them using OCR or LLM-based extraction, and generates a consolidated PDF report.
+Key features:
+- File upload interface
+- Receipt information extraction
+- PDF report generation
+"""
+
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, BackgroundTasks
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
