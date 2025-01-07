@@ -1,2 +1,2 @@
-# recipt_org
+# receipt_org
  Organizing Uber receipts for reimbursement
