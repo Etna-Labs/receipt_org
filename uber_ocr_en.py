@@ -43,12 +43,21 @@ class UberReceiptProcessor:
             receipt_type = "Meal"
             date_pattern = r'(\w{3} \w{3} \d{1,2} \d{4})' # for meal
             date = re.search(date_pattern, clean_text)
-            date_eng = date.group(1)
-            print(date_eng)
+            try:
+                if date:
+                    date_str = date.group(1).title()  # Capitalize first letters
+                    date_eng = datetime.strptime(date_str, "%a %b %d %Y")
+                    print(f"Parsed Meal date: {date_eng}")
+                else:
+                    print(f"No date matched in Meal receipt: {image_path}")
+                    date_eng = "not recognized"
+            except (ValueError, AttributeError) as e:
+                print(f"Error parsing Meal date: {e}")
+                date_eng = "not recognized"
         else:
             receipt_type = "Trip"
             # date_pattern = r"(\d{1,2}月\d{1,2}日\s*\d{1,2}:\d{2}[ap]m)" # for Chinese + English
-            date_pattern = r"(\w{3}\s+\d{1,2}\s+\d{1,2}:\d{2}+[AP]M)" # for English
+            date_pattern = r"(\w{3}\s+\d{1,2}\s+\d{1,2}:\d{2}[AP]M)" # for English
             date = re.search(date_pattern, clean_text, re.IGNORECASE)
             try:
                 if date:
@@ -144,9 +153,21 @@ class UberReceiptProcessor:
                 y_position = self.page_height - 50
             
             # Format date string
-            date_str = str(receipt['date'])
-            if isinstance(receipt['date'], datetime):
-                date_str = receipt['date'].strftime("%b %d, %Y")
+            try:
+                if isinstance(receipt['date'], datetime):
+                    date_str = receipt['date'].strftime("%b %d, %Y")
+                elif isinstance(receipt['date'], str) and receipt['date'] != "not recognized":
+                    # Try to parse string dates that might have slipped through
+                    try:
+                        parsed_date = datetime.strptime(receipt['date'], "%a %b %d %Y")
+                        date_str = parsed_date.strftime("%b %d, %Y")
+                    except ValueError:
+                        date_str = receipt['date']
+                else:
+                    date_str = str(receipt['date'])
+            except Exception as e:
+                print(f"Error formatting date: {e}")
+                date_str = "Invalid date"
             
             # Draw row content
             canvas_instance.drawString(30, y_position, str(receipt['type']))
