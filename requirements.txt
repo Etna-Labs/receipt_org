@@ -7,3 +7,4 @@ Pillow
 reportlab
 streamlit
 watchdog
+openai
