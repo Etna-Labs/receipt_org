@@ -4,6 +4,8 @@ import tempfile
 from uber_ocr_en import UberReceiptProcessor
 import os
 import base64
+import pandas as pd
+import datetime
 
 
 st.set_page_config(
@@ -27,7 +29,7 @@ def main():
     # Sidebar for options
     with st.sidebar:
         st.header("Settings")
-        
+
         # Page orientation control
         orientation = st.selectbox(
             "Page Orientation",
@@ -35,16 +37,16 @@ def main():
             index=0,
             help="Choose between horizontal (landscape) or vertical (portrait) layout"
         )
-        
+
         # Images per page control (3-5 range)
         images_per_page = st.number_input(
-            "Receipts per page",
-            min_value=3,
+            "Receipts per page (2-5)",
+            min_value=2,
             max_value=5,
             value=4,
             help="Number of receipt images to display per page (3-5)"
         )
-        
+
         # Sort direction control
         sort_descending = st.checkbox(
             "Newest receipts first",
@@ -93,7 +95,7 @@ def main():
                             images_per_page=images_per_page,
                             orientation=orientation
                         )
-                        
+
                         # Sort receipts based on user preference
                         processor.sort_receipts_by_time(descending=sort_descending)
 
@@ -118,16 +120,28 @@ def main():
                         # Show results
                         st.success("✅ All receipts processed successfully!")
 
-                        # Display receipt information in a table
+                       # Display receipt information in a table
                         if receipt_info:
                             st.subheader("Receipt Details")
+                            # Create a list of dictionaries for the table
+                            table_data = []
                             for receipt in receipt_info:
-                                # print(receipt)
-                                st.write(f"**{receipt}**")
-                                # st.write(f"**Total$:** ${receipt.amount:.2f}")
-                                # st.write(f"**Type:** {receipt.type}")
-                                # st.write(f"**Date:** {receipt.date}")
-                                st.write("---")  # Adds a horizontal line between receipts
+                                # Convert the receipt string to a dictionary
+                                receipt_dict = eval(str(receipt))
+                                # Format the date to be more readable
+                                receipt_dict['date'] = receipt_dict['date'].strftime('%Y-%m-%d %H:%M')
+                                # Remove the path as it's not needed in the display
+                                receipt_dict.pop('path', None)
+                                table_data.append(receipt_dict)
+
+                            # Convert to DataFrame and display
+                            import pandas as pd
+                            df = pd.DataFrame(table_data)
+                            # Reorder columns if needed
+                            df = df[['date', 'type', 'amount']]
+                            # Rename columns for better display
+                            df.columns = ['Date', 'Type', 'Amount ($)']
+                            st.dataframe(df, use_container_width=True)
 
                         # Offer PDF download
                         with open(output_pdf, "rb") as pdf_file:
