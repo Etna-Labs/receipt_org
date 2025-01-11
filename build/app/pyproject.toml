@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "recipt_org"
+version = "0.1.0"
+description = "Uber Receipt Processor"
+authors = ["Devin <devin@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {version = "0.115.6", extras = ["standard"]}
+uvicorn = "0.34.0"
+python-multipart = "0.0.20"
+reportlab = "4.2.5"
+pillow = "11.0.0"
+pytesseract = "0.3.13"
+Jinja2 = "3.1.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

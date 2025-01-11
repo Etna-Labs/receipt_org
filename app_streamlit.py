@@ -27,12 +27,29 @@ def main():
     # Sidebar for options
     with st.sidebar:
         st.header("Settings")
+        
+        # Page orientation control
+        orientation = st.selectbox(
+            "Page Orientation",
+            ["horizontal", "vertical"],
+            index=0,
+            help="Choose between horizontal (landscape) or vertical (portrait) layout"
+        )
+        
+        # Images per page control (3-5 range)
         images_per_page = st.number_input(
-            "Images per page",
-            min_value=1,
-            max_value=6,
+            "Receipts per page",
+            min_value=3,
+            max_value=5,
             value=4,
-            help="Number of receipt images to display per page in the PDF"
+            help="Number of receipt images to display per page (3-5)"
+        )
+        
+        # Sort direction control
+        sort_descending = st.checkbox(
+            "Newest receipts first",
+            value=True,
+            help="Sort receipts by date (newest to oldest when checked)"
         )
 
     # Preview section
@@ -73,8 +90,12 @@ def main():
                         output_pdf = Path(__file__).parent / "report"/"streamlit_output.pdf"
                         processor = UberReceiptProcessor(
                             str(output_pdf),
-                            images_per_page=images_per_page
+                            images_per_page=images_per_page,
+                            orientation=orientation
                         )
+                        
+                        # Sort receipts based on user preference
+                        processor.sort_receipts_by_time(descending=sort_descending)
 
                         # Process each receipt
                         receipt_info = []
