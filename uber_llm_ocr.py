@@ -11,7 +11,7 @@ from openai import OpenAI
 import base64
 
 oai_api_key = os.getenv("OPENAI_API_KEY")
-print(oai_api_key)
+# print(oai_api_key)
 client = OpenAI(api_key=oai_api_key)
 
 class UberReceiptProcessor:
