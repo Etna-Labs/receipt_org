@@ -44,7 +44,7 @@ def main():
             min_value=2,
             max_value=5,
             value=4,
-            help="Number of receipt images to display per page (3-5)"
+            help="Number of receipt images to display per page (2-5)"
         )
 
         # Sort direction control
