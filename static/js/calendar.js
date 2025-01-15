@@ -16,6 +16,13 @@ document.addEventListener('DOMContentLoaded', function() {
         'Australia/Sydney'
     ];
 
+    // Calendar view state
+    const HOURS_IN_DAY = 24;
+    const MINUTES_PER_HOUR = 60;
+    const HOUR_HEIGHT = 48; // pixels per hour
+    let currentView = 'week';
+    let currentDate = DateTime.now();
+
     // State management
     let selectedTimezones = new Set();
     let events = [];
@@ -23,9 +30,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // DOM elements
     const timezoneSelectorDiv = document.getElementById('timezone-selectors');
     const timezoneCalendarsDiv = document.getElementById('timezone-calendars');
+    const timeColumnDiv = document.querySelector('.time-column');
+    const calendarContentDiv = document.querySelector('.calendar-content');
     const eventForm = document.getElementById('event-form');
     const eventsListDiv = document.getElementById('events-list');
     const eventTimezoneSelect = document.getElementById('event-timezone');
+    const todayBtn = document.getElementById('today-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const currentDateDisplay = document.getElementById('current-date');
+    const viewButtons = {
+        day: document.getElementById('day-view-btn'),
+        week: document.getElementById('week-view-btn'),
+        month: document.getElementById('month-view-btn')
+    };
 
     // Initialize timezone selectors
     function createTimezoneSelector(index) {
@@ -70,20 +88,145 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update calendar views for selected timezones
     function updateCalendarViews() {
-        timezoneCalendarsDiv.innerHTML = '';
+        // Update timezone columns
+        const timezoneColumnsDiv = document.getElementById('timezone-columns');
+        timezoneColumnsDiv.innerHTML = '';
         
         selectedTimezones.forEach(timezone => {
-            const calendarDiv = document.createElement('div');
-            calendarDiv.className = 'timezone-calendar';
+            const column = document.createElement('div');
+            column.className = 'timezone-column';
             
             const header = document.createElement('div');
             header.className = 'timezone-header';
             
-            const now = DateTime.now().setZone(timezone);
-            header.textContent = `${timezone}: ${now.toFormat('yyyy-MM-dd HH:mm:ss')}`;
+            const label = document.createElement('div');
+            label.className = 'timezone-label';
+            label.textContent = timezone;
             
-            calendarDiv.appendChild(header);
-            timezoneCalendarsDiv.appendChild(calendarDiv);
+            const time = document.createElement('div');
+            time.className = 'timezone-time';
+            time.textContent = DateTime.now().setZone(timezone).toFormat('HH:mm');
+            
+            header.appendChild(label);
+            header.appendChild(time);
+            column.appendChild(header);
+            timezoneColumnsDiv.appendChild(column);
+        });
+
+        // Clear existing content
+        timeColumnDiv.innerHTML = '';
+        calendarContentDiv.innerHTML = '';
+        
+        // Generate time labels
+        for (let hour = 0; hour < HOURS_IN_DAY; hour++) {
+            const timeLabel = document.createElement('div');
+            timeLabel.className = 'time-label';
+            timeLabel.textContent = DateTime.now().set({ hour }).toFormat('HH:mm');
+            timeColumnDiv.appendChild(timeLabel);
+        }
+
+        // Add current time indicator
+        const now = DateTime.now();
+        const currentTimeIndicator = document.createElement('div');
+        currentTimeIndicator.className = 'current-time-indicator';
+        const minutesSinceMidnight = now.hour * 60 + now.minute;
+        const topPosition = (minutesSinceMidnight / MINUTES_PER_HOUR) * HOUR_HEIGHT;
+        currentTimeIndicator.style.top = `${topPosition}px`;
+        timeColumnDiv.appendChild(currentTimeIndicator);
+
+        // Calculate date range for current view
+        const startDate = currentView === 'week' 
+            ? currentDate.startOf('week')
+            : currentDate.startOf('day');
+        
+        const daysToShow = currentView === 'week' ? 7 : 1;
+
+        // Create columns for each day
+        for (let dayOffset = 0; dayOffset < daysToShow; dayOffset++) {
+            const currentColumnDate = startDate.plus({ days: dayOffset });
+            const dayColumn = document.createElement('div');
+            dayColumn.className = 'day-column';
+            
+            // Add 'today' class if this column represents today
+            if (currentColumnDate.hasSame(DateTime.now(), 'day')) {
+                dayColumn.classList.add('today');
+            }
+
+            // Create hour cells
+            for (let hour = 0; hour < HOURS_IN_DAY; hour++) {
+                const hourCell = document.createElement('div');
+                hourCell.className = 'hour-cell';
+                hourCell.dataset.date = currentColumnDate.toISO();
+                hourCell.dataset.hour = hour;
+
+                // Show times in all selected timezones
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'timezone-times';
+                
+                selectedTimezones.forEach(timezone => {
+                    const time = currentColumnDate
+                        .set({ hour })
+                        .setZone(timezone);
+                    
+                    const timeSpan = document.createElement('span');
+                    timeSpan.className = 'timezone-time';
+                    timeSpan.textContent = `${timezone}: ${time.toFormat('HH:mm')}`;
+                    timeDiv.appendChild(timeSpan);
+                });
+
+                hourCell.appendChild(timeDiv);
+                dayColumn.appendChild(hourCell);
+            }
+
+            calendarContentDiv.appendChild(dayColumn);
+        }
+
+        // Update events display
+        displayEvents();
+    }
+
+    // Display events on the calendar
+    function displayEvents() {
+        // Clear existing event elements
+        document.querySelectorAll('.event-display').forEach(el => el.remove());
+
+        events.forEach(event => {
+            const startDate = DateTime.fromISO(event.start_datetime);
+            const endDate = DateTime.fromISO(event.end_datetime);
+            
+            // Find the corresponding column
+            const dayColumn = Array.from(calendarContentDiv.children)
+                .find(col => {
+                    const cellDate = DateTime.fromISO(col.querySelector('.hour-cell').dataset.date);
+                    return cellDate.hasSame(startDate, 'day');
+                });
+
+            if (dayColumn) {
+                const startMinutes = startDate.hour * 60 + startDate.minute;
+                const endMinutes = endDate.hour * 60 + endDate.minute;
+                const duration = endMinutes - startMinutes;
+                
+                const eventElement = document.createElement('div');
+                eventElement.className = 'event-display';
+                eventElement.style.top = `${(startMinutes / MINUTES_PER_HOUR) * HOUR_HEIGHT}px`;
+                eventElement.style.height = `${(duration / MINUTES_PER_HOUR) * HOUR_HEIGHT}px`;
+                eventElement.style.backgroundColor = event.color || '#1a73e8';
+                
+                // Create timezone times string
+                const timeStrings = Array.from(selectedTimezones).map(tz => {
+                    const tzStart = startDate.setZone(tz);
+                    const tzEnd = endDate.setZone(tz);
+                    return `${tz}: ${tzStart.toFormat('HH:mm')} - ${tzEnd.toFormat('HH:mm')}`;
+                }).join('\n');
+
+                eventElement.innerHTML = `
+                    <div class="event-title">${event.title}</div>
+                    <div class="event-time">${timeStrings}</div>
+                    ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
+                `;
+
+                dayColumn.appendChild(eventElement);
+            }
         });
     }
 
@@ -92,14 +235,21 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         const title = document.getElementById('event-title').value;
-        const date = document.getElementById('event-date').value;
-        const time = document.getElementById('event-time').value;
+        const startDate = document.getElementById('event-start-date').value;
+        const startTime = document.getElementById('event-start-time').value;
+        const endDate = document.getElementById('event-end-date').value;
+        const endTime = document.getElementById('event-end-time').value;
         const timezone = document.getElementById('event-timezone').value;
+        const description = document.getElementById('event-description').value;
+        const color = document.getElementById('event-color').value;
         
         const event = {
             title,
-            datetime: `${date}T${time}`,
-            timezone
+            start_datetime: `${startDate}T${startTime}`,
+            end_datetime: `${endDate}T${endTime}`,
+            timezone,
+            description,
+            color
         };
 
         try {
@@ -195,6 +345,71 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Calendar view functions
+    function generateTimeLabels() {
+        timeColumnDiv.innerHTML = '';
+        for (let hour = 0; hour < HOURS_IN_DAY; hour++) {
+            const timeLabel = document.createElement('div');
+            timeLabel.className = 'time-label';
+            timeLabel.textContent = `${hour.toString().padStart(2, '0')}:00`;
+            timeLabel.style.height = `${HOUR_HEIGHT}px`;
+            timeColumnDiv.appendChild(timeLabel);
+        }
+    }
+
+    function generateCalendarGrid() {
+        calendarContentDiv.innerHTML = '';
+        const daysToShow = currentView === 'week' ? 7 : 1;
+        
+        // Create grid cells for each day and hour
+        for (let day = 0; day < daysToShow; day++) {
+            const dayColumn = document.createElement('div');
+            dayColumn.className = 'day-column';
+            dayColumn.style.height = `${HOURS_IN_DAY * HOUR_HEIGHT}px`;
+            
+            // Create hour cells within the day
+            for (let hour = 0; hour < HOURS_IN_DAY; hour++) {
+                const hourCell = document.createElement('div');
+                hourCell.className = 'hour-cell';
+                hourCell.style.height = `${HOUR_HEIGHT}px`;
+                dayColumn.appendChild(hourCell);
+            }
+            
+            calendarContentDiv.appendChild(dayColumn);
+        }
+    }
+
+    function updateCurrentDateDisplay() {
+        const format = currentView === 'month' ? 'MMMM yyyy' : 'MMMM d, yyyy';
+        currentDateDisplay.textContent = currentDate.toFormat(format);
+    }
+
+    function switchView(view) {
+        currentView = view;
+        Object.keys(viewButtons).forEach(key => {
+            viewButtons[key].classList.toggle('active', key === view);
+        });
+        updateCalendarView();
+    }
+
+    function updateCalendarView() {
+        updateCurrentDateDisplay();
+        generateTimeLabels();
+        generateCalendarGrid();
+        // Populate events after grid is generated
+        populateEvents();
+    }
+
+    function navigateCalendar(direction) {
+        const units = {
+            day: { days: 1 },
+            week: { weeks: 1 },
+            month: { months: 1 }
+        };
+        currentDate = currentDate.plus(units[currentView]).multiply(direction);
+        updateCalendarView();
+    }
+
     // Initialize the page
     function initialize() {
         // Create three timezone selectors
@@ -208,11 +423,46 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set up event form handler
         eventForm.addEventListener('submit', handleEventSubmit);
         
+        // Set up navigation handlers
+        todayBtn.addEventListener('click', () => {
+            currentDate = DateTime.now();
+            updateCalendarView();
+        });
+        
+        prevBtn.addEventListener('click', () => navigateCalendar(-1));
+        nextBtn.addEventListener('click', () => navigateCalendar(1));
+        
+        // Set up view switching handlers
+        Object.entries(viewButtons).forEach(([view, button]) => {
+            button.addEventListener('click', () => switchView(view));
+        });
+        
         // Load existing events
         loadEvents();
         
-        // Update time display periodically
-        setInterval(updateCalendarViews, 1000);
+        // Initial calendar setup
+        updateCalendarView();
+        
+        // Update timezone times periodically
+        function updateTimezoneTimes() {
+            const timezoneColumns = document.querySelectorAll('.timezone-column');
+            timezoneColumns.forEach(column => {
+                const timeElement = column.querySelector('.timezone-time');
+                const timezone = column.querySelector('.timezone-label').textContent;
+                timeElement.textContent = DateTime.now().setZone(timezone).toFormat('HH:mm');
+            });
+        }
+
+        // Update times every minute
+        setInterval(() => {
+            updateTimezoneTimes();
+            if (currentView !== 'month') {
+                updateCalendarView();
+            }
+        }, 60000); // Update every minute
+
+        // Initial time update
+        updateTimezoneTimes();
     }
 
     // Start the application

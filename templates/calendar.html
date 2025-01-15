@@ -6,45 +6,117 @@
     <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Multi-Timezone Calendar</h1>
-        <div id="timezone-selectors" class="timezone-selectors">
-            <!-- Timezone selectors will be dynamically added here -->
-        </div>
-        
-        <div class="calendar-grid">
-            <div id="timezone-calendars" class="timezone-calendars">
-                <!-- Calendar views for each timezone will be added here -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="mini-calendar">
+                <!-- Mini calendar will be added here -->
+            </div>
+            <div id="timezone-selectors" class="timezone-selectors">
+                <!-- Timezone selectors will be dynamically added here -->
             </div>
         </div>
 
-        <div class="event-section">
-            <h2>Schedule Event</h2>
-            <form id="event-form" class="event-form">
-                <div class="form-group">
-                    <label for="event-title">Event Title:</label>
-                    <input type="text" id="event-title" required>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="calendar-header">
+                <div class="header-left">
+                    <button id="today-btn" class="header-btn">Today</button>
+                    <div class="nav-buttons">
+                        <button id="prev-btn" class="header-btn nav-btn">&lt;</button>
+                        <button id="next-btn" class="header-btn nav-btn">&gt;</button>
+                    </div>
+                    <h2 id="current-date" class="current-date">February 2024</h2>
                 </div>
-                <div class="form-group">
-                    <label for="event-date">Date:</label>
-                    <input type="date" id="event-date" required>
+                <div class="view-controls">
+                    <button id="day-view-btn" class="header-btn view-btn">Day</button>
+                    <button id="week-view-btn" class="header-btn view-btn active">Week</button>
+                    <button id="month-view-btn" class="header-btn view-btn">Month</button>
                 </div>
-                <div class="form-group">
-                    <label for="event-time">Time:</label>
-                    <input type="time" id="event-time" required>
+            </header>
+
+            <!-- Calendar Grid -->
+            <div class="calendar-container">
+                <div id="timezone-columns" class="timezone-columns">
+                    <!-- Timezone columns will be dynamically added here -->
                 </div>
-                <div class="form-group">
-                    <label for="event-timezone">Event Timezone:</label>
-                    <select id="event-timezone" required>
-                        <!-- Timezone options will be dynamically added here -->
-                    </select>
+                <div class="calendar-grid">
+                    <div class="calendar-header-row">
+                        <div class="time-column-header"></div>
+                        <div class="day-header">Sun</div>
+                        <div class="day-header">Mon</div>
+                        <div class="day-header">Tue</div>
+                        <div class="day-header">Wed</div>
+                        <div class="day-header">Thu</div>
+                        <div class="day-header">Fri</div>
+                        <div class="day-header">Sat</div>
+                    </div>
+                    <div id="timezone-calendars" class="timezone-calendars">
+                        <div class="time-column">
+                            <!-- Time labels will be dynamically added here -->
+                        </div>
+                        <div class="calendar-content">
+                            <!-- Calendar grid cells will be dynamically added here -->
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" class="submit-btn">Add Event</button>
-            </form>
+            </div>
         </div>
 
+        <!-- Event Creation Modal -->
+        <div id="event-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create Event</h2>
+                    <button id="close-modal" class="close-btn">&times;</button>
+                </div>
+                <form id="event-form" class="event-form">
+                    <div class="form-group">
+                        <label for="event-title">Event Title:</label>
+                        <input type="text" id="event-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-start-date">Start Date:</label>
+                        <input type="date" id="event-start-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-start-time">Start Time:</label>
+                        <input type="time" id="event-start-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-end-date">End Date:</label>
+                        <input type="date" id="event-end-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-end-time">End Time:</label>
+                        <input type="time" id="event-end-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-timezone">Event Timezone:</label>
+                        <select id="event-timezone" required>
+                            <!-- Timezone options will be dynamically added here -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-description">Description:</label>
+                        <textarea id="event-description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-color">Color:</label>
+                        <input type="color" id="event-color" value="#1a73e8">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-event" class="btn">Cancel</button>
+                        <button type="submit" class="btn submit-btn">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Events List (can be toggled) -->
         <div id="events-list" class="events-list">
-            <h2>Scheduled Events</h2>
+            <h3>Upcoming Events</h3>
             <!-- Events will be dynamically added here -->
         </div>
     </div>
