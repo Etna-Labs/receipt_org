@@ -27,12 +27,19 @@ def main():
     # Sidebar for options
     with st.sidebar:
         st.header("Settings")
+        orientation = st.selectbox(
+            "Page Orientation",
+            ["Horizontal", "Vertical"],
+            index=0,
+            help="Choose the orientation of pages in the PDF"
+        )
+        
         images_per_page = st.number_input(
             "Images per page",
-            min_value=1,
-            max_value=6,
+            min_value=3,
+            max_value=5,
             value=4,
-            help="Number of receipt images to display per page in the PDF"
+            help="Number of receipt images to display per page in the PDF (3-5)"
         )
 
     # Preview section
@@ -89,8 +96,11 @@ def main():
                             progress_bar.progress(progress)
                             status_text.text(f"Processing receipt {idx + 1} of {len(uploaded_files)}...")
 
-                        # Generate PDF
-                        processor.create_pdf()
+                        # Generate enhanced PDF with selected options
+                        processor.create_pdf_enhanced(
+                            orientation=orientation.lower(),
+                            images_per_page=images_per_page
+                        )
                         progress_bar.progress(1.0)
                         status_text.text("Processing complete...")
 
