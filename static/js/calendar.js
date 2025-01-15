@@ -243,35 +243,72 @@ document.addEventListener('DOMContentLoaded', function() {
         const description = document.getElementById('event-description').value;
         const color = document.getElementById('event-color').value;
         
-        const event = {
-            title,
-            start_datetime: `${startDate}T${startTime}`,
-            end_datetime: `${endDate}T${endTime}`,
-            timezone,
-            description,
-            color
-        };
-
         try {
-            const response = await fetch('/api/events', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(event)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to create event');
+            // Create DateTime objects with the selected timezone
+            const start = DateTime.fromFormat(
+                `${startDate} ${startTime}`,
+                'yyyy-MM-dd HH:mm',
+                { zone: timezone }
+            );
+            
+            if (!start.isValid) {
+                throw new Error('Invalid start date/time');
             }
+            
+            const end = DateTime.fromFormat(
+                `${endDate} ${endTime}`,
+                'yyyy-MM-dd HH:mm',
+                { zone: timezone }
+            );
+            
+            if (!end.isValid) {
+                throw new Error('Invalid end date/time');
+            }
+            
+            if (end < start) {
+                throw new Error('End time must be after start time');
+            }
+            
+            // Log the datetime objects for debugging
+            console.log('Start DateTime:', start.toISO());
+            console.log('End DateTime:', end.toISO());
+            
+            const event = {
+                title,
+                start_datetime: start.toUTC().toISO({ suppressMilliseconds: true }),
+                end_datetime: end.toUTC().toISO({ suppressMilliseconds: true }),
+                timezone,
+                description: description || undefined,
+                color: color || '#1a73e8'
+            };
+            
+            console.log('Event payload:', event);
 
-            const result = await response.json();
-            events.push(result.event);
-            updateEventsList();
-            eventForm.reset();
+            try {
+                const response = await fetch('/api/events', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(event)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create event');
+                }
+
+                const result = await response.json();
+                events.push(result.event);
+                updateEventsList();
+                updateCalendarViews();
+                eventForm.reset();
+            } catch (error) {
+                console.error('Error creating event:', error);
+                alert('Failed to create event. Please try again.');
+            }
         } catch (error) {
-            console.error('Error creating event:', error);
-            alert('Failed to create event. Please try again.');
+            console.error('Error validating event data:', error);
+            alert(error.message);
         }
     }
 
@@ -295,7 +332,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const eventDiv = document.createElement('div');
             eventDiv.className = 'event-item';
             
-            const datetime = DateTime.fromISO(event.datetime, { zone: event.timezone });
+            const startTime = DateTime.fromISO(event.start_datetime, { zone: event.timezone });
+            const endTime = DateTime.fromISO(event.end_datetime, { zone: event.timezone });
             
             const titleDiv = document.createElement('div');
             titleDiv.className = 'event-title';
@@ -306,7 +344,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show time in all selected timezones
             const times = Array.from(selectedTimezones).map(tz => {
-                return `${tz}: ${datetime.setZone(tz).toFormat('yyyy-MM-dd HH:mm')}`;
+                const startInTz = startTime.setZone(tz);
+                const endInTz = endTime.setZone(tz);
+                return `${tz}: ${startInTz.toFormat('yyyy-MM-dd HH:mm')} - ${endInTz.toFormat('HH:mm')}`;
             }).join('\n');
             
             timeDiv.textContent = times;
@@ -397,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
         generateTimeLabels();
         generateCalendarGrid();
         // Populate events after grid is generated
-        populateEvents();
+        displayEvents();
     }
 
     function navigateCalendar(direction) {
