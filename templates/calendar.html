@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calendar Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/calendar.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Multi-Timezone Calendar</h1>
+        <div id="timezone-selectors" class="timezone-selectors">
+            <!-- Timezone selectors will be dynamically added here -->
+        </div>
+        
+        <div class="calendar-grid">
+            <div id="timezone-calendars" class="timezone-calendars">
+                <!-- Calendar views for each timezone will be added here -->
+            </div>
+        </div>
+
+        <div class="event-section">
+            <h2>Schedule Event</h2>
+            <form id="event-form" class="event-form">
+                <div class="form-group">
+                    <label for="event-title">Event Title:</label>
+                    <input type="text" id="event-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-date">Date:</label>
+                    <input type="date" id="event-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-time">Time:</label>
+                    <input type="time" id="event-time" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-timezone">Event Timezone:</label>
+                    <select id="event-timezone" required>
+                        <!-- Timezone options will be dynamically added here -->
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Add Event</button>
+            </form>
+        </div>
+
+        <div id="events-list" class="events-list">
+            <h2>Scheduled Events</h2>
+            <!-- Events will be dynamically added here -->
+        </div>
+    </div>
+    <script src="{{ url_for('static', path='/js/calendar.js') }}"></script>
+</body>
+</html>

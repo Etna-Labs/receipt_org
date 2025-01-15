@@ -2,11 +2,14 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Bac
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 from pathlib import Path
 import logging
 import shutil
 import os
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 # from uber_ocr_en import UberReceiptProcessor # using ocr
 from uber_llm_ocr import UberReceiptProcessor # using llm
 from tempfile import NamedTemporaryFile
@@ -17,6 +20,32 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# Event data model
+class Event(BaseModel):
+    title: str
+    datetime: str
+    timezone: str
+
+# In-memory event storage
+events_db: List[Event] = []
+
+# Event endpoints
+@app.get("/api/events")
+async def get_events():
+    return events_db
+
+@app.post("/api/events")
+async def create_event(event: Event):
+    events_db.append(event)
+    return {"status": "success", "event": jsonable_encoder(event)}
+
+@app.delete("/api/events/{event_id}")
+async def delete_event(event_id: int):
+    if 0 <= event_id < len(events_db):
+        events_db.pop(event_id)
+        return {"status": "success"}
+    raise HTTPException(status_code=404, detail="Event not found")
+
 # 创建上传目录
 # UPLOAD_DIR = Path("receipts")
 # UPLOAD_DIR.mkdir(exist_ok=True)
@@ -26,6 +55,10 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/calendar", response_class=HTMLResponse)
+async def calendar_page(request: Request):
+    return templates.TemplateResponse("calendar.html", {"request": request})
 
 @app.post("/upload")
 async def process_receipts(
